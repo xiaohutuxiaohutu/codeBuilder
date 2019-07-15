@@ -1,0 +1,10 @@
+rootProject.name = 'codeBuild'
+
+/*include 'aplanmis-common'
+//include 'aplanmis-bsc'
+include 'aplanmis-core'
+include 'aplanmis-front'
+include 'aplanmis-mall'
+include 'aplanmis-rest'*/
+
+

@@ -1,0 +1,36 @@
+buildscript {
+	ext {
+		springBootVersion = '2.0.1.RELEASE'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.augurit.tool'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 1.8
+
+repositories {
+	mavenLocal()
+	maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+	mavenCentral()
+}
+
+
+dependencies {
+	//compile('org.springframework.boot:spring-boot-starter')
+	//testCompile('org.springframework.boot:spring-boot-starter-test')
+	compile('org.freemarker:freemarker:2.3.23')
+	compile('commons-dbcp:commons-dbcp:1.4')
+	compile('org.slf4j:jcl-over-slf4j:1.7.25')
+	compile fileTree(include: ['*.jar'], dir: 'src\\main\\webapp\\WEB-INF\\lib')
+}
