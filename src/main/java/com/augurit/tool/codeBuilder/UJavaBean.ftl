@@ -50,7 +50,7 @@ private static final long serialVersionUID = 1L;
 
     </#if>
 </#list>-->
-    //public String getTableName()  {
-    //    return "${bean_type}";
-    //}
+//public String getTableName()  {
+//    return "${bean_type}";
+//}
 }

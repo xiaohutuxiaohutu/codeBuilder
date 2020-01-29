@@ -1,18 +1,18 @@
 package com.augurit.tool.utils;
 
-public abstract class AbstractDiarectMetaSql implements DiarectMetaSql  {
+public abstract class AbstractDiarectMetaSql implements DiarectMetaSql {
 
-    private final static OracleDiarectMetaSql oracleDiarectMetaSql=new OracleDiarectMetaSql();
-    private final static MysqlDiarectMetaSql mysqlDiarectMetaSql=new MysqlDiarectMetaSql();
+    private final static OracleDiarectMetaSql oracleDiarectMetaSql = new OracleDiarectMetaSql();
+    private final static MysqlDiarectMetaSql mysqlDiarectMetaSql = new MysqlDiarectMetaSql();
 
-    public static   DiarectMetaSql createInstance(String dbTyp){
-        switch (dbTyp){
+    public static DiarectMetaSql createInstance(String dbTyp) {
+        switch (dbTyp) {
             case "oracle":
                 return oracleDiarectMetaSql;
             case "mysql":
-                return  mysqlDiarectMetaSql;
+                return mysqlDiarectMetaSql;
             default:
-                return  mysqlDiarectMetaSql;
+                return mysqlDiarectMetaSql;
         }
     }
 }

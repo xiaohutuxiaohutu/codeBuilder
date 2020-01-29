@@ -14,7 +14,10 @@ import java.io.*;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by BranGao on 2016-11-01.
@@ -60,7 +63,7 @@ public abstract class CodeSuper {
             }
             pm.setProperty("file", property_FileName);
 
-        }catch (Exception ex) {
+        } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
         return pm;
@@ -68,7 +71,7 @@ public abstract class CodeSuper {
 
     public static String getPropertiesValue(String propertiesKey) {
         PropertiesManager pm = CodeSuper.getPropertiesManager();
-        return pm.getString(propertiesKey)==null?"":pm.getString(propertiesKey);
+        return pm.getString(propertiesKey) == null ? "" : pm.getString(propertiesKey);
     }
 
     public static String fetchBeanName(String tableFileds) {
@@ -93,92 +96,16 @@ public abstract class CodeSuper {
 
     public abstract String getOutputPath();
 
-    public BasicDataSource getBasicDataSource() throws Exception {
-        if (dataSource != null) return dataSource;
-        File file = new File(property_FileName);
-        PropertiesManager pm = CodeSuper.getPropertiesManager();
-        dataSource = new BasicDataSource();
-        dataSource.setDriverClassName(pm.getString("spring.datasource.driver-class-name"));
-        dataSource.setUrl(pm.getString("spring.datasource.url"));
-        dataSource.setUsername(pm.getString("spring.datasource.username"));
-        dataSource.setPassword(pm.getString("spring.datasource.password"));
-        diarectMetaSql= AbstractDiarectMetaSql.createInstance(DiarectStrEnum.fromJdbcUrl(pm.getString("spring.datasource.url")));
-        return dataSource;
+    public static String getStaticTemplaterPath() {
+        return Generator_Project_Path + "\\" + CodeSuper.getPropertiesValue("templater_project") + CodeSuper.getPropertiesValue("template_path");
     }
 
-    /***
-     * 创建代码文件method
-     * @param src  package的外部绝对路径
-     * @param packageAndClassPath   包以及类名路径
-     * @param ftl_file_name        模板文件   xxx.ftl
-     * @param file_type            文件类型-后缀名  如:.xml,.java
-     * @param root                 从前面方法传过来的模板上下文 参数map
-     * @throws Exception
-     */
-    public void buildCodeForTemplater(String src, String packageAndClassPath, String ftl_file_name, String file_type, Map root) throws Exception {
-        String javaFilePath = "";
-        // 处理文件地址
-        boolean isPagePath = false;
-        isPagePath = ".jsp".equals(file_type) || ".js".equals(file_type);
-        if (isPagePath) {
-            if (".jsp".equals(file_type)) {
-                javaFilePath = fetchJspFilePath() + file_type;
-            } else {
-                javaFilePath = fetchJsFilePath() + file_type;
-            }
-
-        } else {
-            javaFilePath = src + "\\" + packageAndClassPath.replace('.', '\\') + file_type;
-        }
-        File javaFilePath_Direct = new File(javaFilePath);
-        // 级联建立好文件存在的目录
-        if (!javaFilePath_Direct.getParentFile().exists()) {
-            javaFilePath_Direct.getParentFile().mkdirs();
-        }
-
-        // 模板上下文
-        Configuration cfg = new Configuration();
-        cfg.setDirectoryForTemplateLoading(new File(CodeSuper.getStaticTemplaterPath()));
-        cfg.setDefaultEncoding("GBK");
-        // 建立模板
-        Template t = cfg.getTemplate(ftl_file_name, "UTF-8");
-        Writer out = null;
-        out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(javaFilePath), "UTF-8"));
-        //拷贝一份map对象
-        Map newFileParamsMap = new HashMap();
-        newFileParamsMap.putAll(root);
-        if (!isPagePath) {
-            newFileParamsMap.put("bean_pkg", packageAndClassPath.substring(0, packageAndClassPath.lastIndexOf(".")));
-            newFileParamsMap.put("bean_type", packageAndClassPath.substring(packageAndClassPath.lastIndexOf(".") + 1));
-            newFileParamsMap.put("bean_class_package", packageAndClassPath);
-        }
-        // 根据模板来自动编写代码文件
-        t.process(newFileParamsMap, out);
-        //log.info("成功创建文件"+javaFilePath);
-        System.out.println("成功创建文件"+javaFilePath);
-        out.flush();
-        out.close();
+    public static String getStaticProjectTarget() {
+        return CodeSuper.getPropertiesValue("target_genarate_project_name");
     }
 
-    /***
-     * 数据库字段名转换为java字段名
-     * 规则为将类似 CLIENT_INFO_ID 转换为 clientInfoId这样的名称
-     * 1.全部小写2 下划线之后第一个字母大写3 去掉下划线4 在 ftl文件中 将首字母小写
-     * */
-    public String filedTransformer(String tableFileds) {
-        if(tableFileds==null)return "";
-        tableFileds = tableFileds.toLowerCase();
-        StringBuilder sb = new StringBuilder();
-        //解开数据库中的下划线分隔
-        String[] filed_chars = tableFileds.split("_");
-        if (filed_chars.length > 1) {
-            for (int i = 0; i < filed_chars.length; i++) {
-                sb.append(filed_chars[i].substring(0, 1).toUpperCase() + filed_chars[i].substring(1));
-            }
-        } else {
-            sb.append(tableFileds);
-        }
-        return sb.toString();
+    public static String getDataBaseName() {
+        return CodeSuper.getPropertiesValue("table_db_schema");
     }
 
     /***
@@ -348,38 +275,71 @@ public abstract class CodeSuper {
         this.tableName = tableName;
     }
 
-    public Map getTableInfo() {
-        Map result = new HashMap<String, Object>();
-        try {
-            BasicDataSource dataSource = getBasicDataSource();
-            String sql_rmark = diarectMetaSql.getTableNameBaseSql(getDataBaseName(),getTableName());
-            //System.out.println(sql_rmark);
-            List listTableRowMateData = new ArrayList();
-            Connection connection = dataSource.getConnection();
-            Statement stmt = connection.createStatement();
-            ResultSet resultset_stmt_rmark = stmt.executeQuery(sql_rmark);
-            String tableComment = "";
-            while (resultset_stmt_rmark.next()) {
-                tableComment = resultset_stmt_rmark.getString("TABLE_COMMENT");
-            }
-            stmt.close();
-            connection.close();
-            result.put("tableComment", tableComment);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println(e.getMessage());
-        }
-        return result;
+    public BasicDataSource getBasicDataSource() throws Exception {
+        if (dataSource != null) return dataSource;
+        File file = new File(property_FileName);
+        PropertiesManager pm = CodeSuper.getPropertiesManager();
+        dataSource = new BasicDataSource();
+        dataSource.setDriverClassName(pm.getString("spring.datasource.driver-class-name"));
+        dataSource.setUrl(pm.getString("spring.datasource.url"));
+        dataSource.setUsername(pm.getString("spring.datasource.username"));
+        dataSource.setPassword(pm.getString("spring.datasource.password"));
+        diarectMetaSql = AbstractDiarectMetaSql.createInstance(DiarectStrEnum.fromJdbcUrl(pm.getString("spring.datasource.url")));
+        return dataSource;
     }
 
-    public String getTableNameDesc() {
+    /***
+     * 创建代码文件method
+     * @param src  package的外部绝对路径
+     * @param packageAndClassPath   包以及类名路径
+     * @param ftl_file_name        模板文件   xxx.ftl
+     * @param file_type            文件类型-后缀名  如:.xml,.java
+     * @param root                 从前面方法传过来的模板上下文 参数map
+     * @throws Exception
+     */
+    public void buildCodeForTemplater(String src, String packageAndClassPath, String ftl_file_name, String file_type, Map root) throws Exception {
+        String javaFilePath = "";
+        // 处理文件地址
+        boolean isPagePath = false;
+        isPagePath = ".jsp".equals(file_type) || ".js".equals(file_type);
+        if (isPagePath) {
+            if (".jsp".equals(file_type)) {
+                javaFilePath = fetchJspFilePath() + file_type;
+            } else {
+                javaFilePath = fetchJsFilePath() + file_type;
+            }
 
-        Map map = getTableInfo();
-        if (map.get("tableComment") != null||map.get("TABLECOMMENT") != null) {
-            tableNameDesc = map.get("tableComment").toString();
+        } else {
+            javaFilePath = src + "\\" + packageAndClassPath.replace('.', '\\') + file_type;
+        }
+        File javaFilePath_Direct = new File(javaFilePath);
+        // 级联建立好文件存在的目录
+        if (!javaFilePath_Direct.getParentFile().exists()) {
+            javaFilePath_Direct.getParentFile().mkdirs();
         }
 
-        return tableNameDesc;
+        // 模板上下文
+        Configuration cfg = new Configuration();
+        cfg.setDirectoryForTemplateLoading(new File(CodeSuper.getStaticTemplaterPath()));
+        cfg.setDefaultEncoding("GBK");
+        // 建立模板
+        Template t = cfg.getTemplate(ftl_file_name, "UTF-8");
+        Writer out = null;
+        out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(javaFilePath), "UTF-8"));
+        //拷贝一份map对象
+        Map newFileParamsMap = new HashMap();
+        newFileParamsMap.putAll(root);
+        if (!isPagePath) {
+            newFileParamsMap.put("bean_pkg", packageAndClassPath.substring(0, packageAndClassPath.lastIndexOf(".")));
+            newFileParamsMap.put("bean_type", packageAndClassPath.substring(packageAndClassPath.lastIndexOf(".") + 1));
+            newFileParamsMap.put("bean_class_package", packageAndClassPath);
+        }
+        // 根据模板来自动编写代码文件
+        t.process(newFileParamsMap, out);
+        //log.info("成功创建文件"+javaFilePath);
+        System.out.println("成功创建文件" + javaFilePath);
+        out.flush();
+        out.close();
     }
 
     public void setTableNameDesc(String tableNameDesc) {
@@ -406,13 +366,58 @@ public abstract class CodeSuper {
         return diarectMetaSql;
     }
 
-    public static String getStaticTemplaterPath(){
-        return Generator_Project_Path + "\\"+CodeSuper.getPropertiesValue("templater_project")+CodeSuper.getPropertiesValue("template_path");
+    /***
+     * 数据库字段名转换为java字段名
+     * 规则为将类似 CLIENT_INFO_ID 转换为 clientInfoId这样的名称
+     * 1.全部小写2 下划线之后第一个字母大写3 去掉下划线4 在 ftl文件中 将首字母小写
+     * */
+    public String filedTransformer(String tableFileds) {
+        if (tableFileds == null) return "";
+        tableFileds = tableFileds.toLowerCase();
+        StringBuilder sb = new StringBuilder();
+        //解开数据库中的下划线分隔
+        String[] filed_chars = tableFileds.split("_");
+        if (filed_chars.length > 1) {
+            for (int i = 0; i < filed_chars.length; i++) {
+                sb.append(filed_chars[i].substring(0, 1).toUpperCase() + filed_chars[i].substring(1));
+            }
+        } else {
+            sb.append(tableFileds);
+        }
+        return sb.toString();
     }
-    public static String getStaticProjectTarget(){
-        return CodeSuper.getPropertiesValue("target_genarate_project_name");
+
+    public Map getTableInfo() {
+        Map result = new HashMap<String, Object>();
+        try {
+            BasicDataSource dataSource = getBasicDataSource();
+            String sql_rmark = diarectMetaSql.getTableNameBaseSql(getDataBaseName(), getTableName());
+            //System.out.println(sql_rmark);
+            List listTableRowMateData = new ArrayList();
+            Connection connection = dataSource.getConnection();
+            Statement stmt = connection.createStatement();
+            ResultSet resultset_stmt_rmark = stmt.executeQuery(sql_rmark);
+            String tableComment = "";
+            while (resultset_stmt_rmark.next()) {
+                tableComment = resultset_stmt_rmark.getString("TABLE_COMMENT");
+            }
+            stmt.close();
+            connection.close();
+            result.put("tableComment", tableComment);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+        return result;
     }
-    public static String getDataBaseName(){
-        return CodeSuper.getPropertiesValue("table_db_schema");
+
+    public String getTableNameDesc() {
+
+        Map map = getTableInfo();
+        if (map.get("tableComment") != null || map.get("TABLECOMMENT") != null) {
+            tableNameDesc = map.get("tableComment").toString();
+        }
+
+        return tableNameDesc;
     }
 }

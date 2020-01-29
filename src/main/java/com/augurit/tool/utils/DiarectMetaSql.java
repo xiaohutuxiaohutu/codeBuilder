@@ -1,13 +1,15 @@
 package com.augurit.tool.utils;
 
 public interface DiarectMetaSql {
-    public String tableNameBaseSql="";
-    public String tableColumnsBaseSql="";
-    public String tableColumnWithPriKeyBaseSql="";
-    public String tableColumnWithAllConstransBaseSql="";
+    String tableNameBaseSql = "";
+    String tableColumnsBaseSql = "";
+    String tableColumnWithPriKeyBaseSql = "";
+    String tableColumnWithAllConstransBaseSql = "";
 
-    public String getTableNameBaseSql(String dbName,String tableName);
-    public String getTableColumnsBaseSql(String dbName,String tableName);
-    public String getTableNameDesc(String dbName);
+    String getTableNameBaseSql(String dbName, String tableName);
+
+    String getTableColumnsBaseSql(String dbName, String tableName);
+
+    String getTableNameDesc(String dbName);
 
 }

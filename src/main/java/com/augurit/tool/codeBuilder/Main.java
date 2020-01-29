@@ -110,15 +110,15 @@ public class Main {
                 "aea_unit_linkman",
                 "aea_unit_proj"};
         String tableName = "AEA_UNIT_INFO";
-        String[] units={"aea_unit_info",
+        String[] units = {"aea_unit_info",
                 "aea_unit_info_log",
                 "aea_unit_linkman",
                 "aea_unit_proj"};
-        String[] projs={"aea_parent_proj",
+        String[] projs = {"aea_parent_proj",
                 "aea_proj_info",
                 "aea_proj_info_log",
                 "aea_proj_linkman",};
-        String[] links={"aea_linkman_info"};
+        String[] links = {"aea_linkman_info"};
         for (String s : links) {
             CodeCommon my = new CodeCommon(s);
             Main main = new Main();
